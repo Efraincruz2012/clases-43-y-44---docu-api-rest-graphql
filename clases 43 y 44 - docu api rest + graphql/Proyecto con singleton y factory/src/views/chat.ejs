@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Index</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+          integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+      <style>
+        .content-title{
+          color: blue;
+        }
+        .buttons-container{
+          margin-bottom: 100px;
+          margin-top: 40px;
+        }
+        .btn-success{
+          margin: 26px;
+        }
+        .chat-box{
+          background-color: rgb(85 85 85);
+          width: 100%;
+          height: 400px;
+          margin: 10px;
+          border: 1px solid red;
+          border-radius: 5px;
+          overflow-y: scroll;
+        }
+        .chat-input{
+          background-color: rgb(85 85 85);
+          width: 100%;
+          margin: 10px;
+          border: 1px solid red;
+          border-radius: 5px;
+        }
+        .chat-textarea {
+          width: 85%;
+          height: 100%;
+          background: transparent;
+          color: white;
+        }
+        .chat-enter-button {
+          height: 50px;
+          position: relative;
+          background: blue;
+          color: white;
+          width: 14%;
+          top: -19px;
+        }
+        .author-name{
+          color: white;
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .message-text{
+          color: white;
+          font-size: 14px;
+          overflow-wrap: break-word;
+        }
+        .author-avatar{
+          border-radius: 5px;
+        }
+        .message-container{
+          margin-bottom: 3px;
+        }
+      </style>
+  </head>
+  <body>
+    <div class="container mt-3">
+      <div class="jumbotron">
+          <h2 class="content-title">Bienvenido <%= name %> a la sala de chat</h2>
+          <% if(typeof picture != 'undefined'){ %>
+            <img src="<%= picture %>" width="50px" />
+          <% } %>
+          <div id="chat-box" class="chat-box">
+
+          </div>
+          <div class="chat-input">
+            <textarea class="chat-textarea" name="chatinput" placeholder="Ingresa el mensaje aqui."></textarea>
+            <button class="chat-enter-button" type="button" onclick="sendMessage()">Enviar</button>
+          </div>
+          <div class="buttons-container">
+            <a href="/" class="btn btn-secondary">Volver</a>
+            <a href="/chat/email" class="btn btn-success">Chat Email</a>
+          </div>
+          <a href="/logout" class="btn btn-warning btn-lg right" role="button">Desloguear</a>
+      </div>
+    </div>
+    <%- include("websockets.ejs") %>
+    <% if(typeof token != 'undefined'){ %>
+      <script>
+          document.cookie="user=<%= token %>";
+      </script>
+    <% } %>
+      <script>
+        const sendMessage = () => {
+          const chatTextarea = document.getElementsByClassName('chat-textarea')[0];
+          const message = {  
+            value: chatTextarea.value
+          }
+          socket.emit('newMessage', message);
+        }
+
+        
+        <% if(typeof onlyEmail != 'undefined'){ %>
+        
+          setInterval(() => {
+            socket.emit('getMessages', '<%= onlyEmail %>');
+          }, 3000);
+
+        <% } else { %>
+        
+          setInterval(() => {
+            socket.emit('getMessages');
+          }, 3000);
+
+        <% } %>
+
+
+        function makeHTML(messages) {
+          return messages.map((message, index) => {
+              return (`<div class="message-container">
+                <img class="author-avatar" width="35px" height="35px" src="${document.location.origin}/${message.author.avatar}" alt="avatar"/> 
+                  <strong class="author-name">${message.author.name}:</strong>
+                  <em class="message-text">${message.message}</em>
+                  </div>`)
+          }).join(" ")
+        }
+
+        function renderMensajes(messages) {
+            const html = makeHTML(messages)
+            document.getElementById('chat-box').innerHTML = html;
+        }
+
+        socket.on('updateMessages', messages => {
+          renderMensajes(messages)          
+        });
+      </script>
+  </body>
+</html>
